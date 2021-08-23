@@ -1,0 +1,5 @@
+{
+    "name": "anonymous-message",
+    "db": "mongodb://localhost/anon",
+    "jwtPass": "12345"
+}

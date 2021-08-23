@@ -1,0 +1,4 @@
+{
+    "name": "anonymous-message",
+    "db": "mongodb://localhost/anon"
+}
