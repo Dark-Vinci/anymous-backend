@@ -30,6 +30,8 @@ function validateMessage(inp) {
     return result;
 }
 
-module.exports.Comment = Comment;
-module.exports.commentSchema = commentSchema;
-module.exports.validateMessage = validateMessage;
+module.exports = {
+    Comment,
+    commentSchema,
+    validateMessage
+}

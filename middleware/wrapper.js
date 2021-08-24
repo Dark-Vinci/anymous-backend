@@ -1,14 +1,13 @@
 
 
-function wrap(handler) {
+function wrapper(handler) {
     return async (req, res, next) => {
         try {
-            handler(req, res);
+            await handler(req, res);
         } catch (ex) {
-            console.log(err.message)
-            next();
+            next(ex);
         }
     }
 }
 
-module.exports = wrap;
+module.exports = wrapper;

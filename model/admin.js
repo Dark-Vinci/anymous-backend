@@ -33,10 +33,14 @@ const adminSchema = new Schema({
 });
 
 adminSchema.methods.generateToken = function() {
-    return jwt.sign({ _id: this._id, 
+    const token = jwt.sign({ _id: this._id, 
         superAdmin: this.superAdmin,
         isAdmin: true
-    }, config.get('jwtPass'))
+    }, config.get('jwtPass'), {
+        expiresIn: config.get('jwtExpires')
+    });
+
+    return token;
 }
 
 const Admin = mongoose.model('Admin', adminSchema);
@@ -80,10 +84,6 @@ function validateLogin(inp) {
 
 function validatePass(inp) {
     const schema = Joi.object({
-        email : Joi.string()
-            .email()
-            .required(),
-
         oldPassword: Joi.string()
             .min(5)
             .max(1024),
@@ -97,7 +97,9 @@ function validatePass(inp) {
     return result;
 };
 
-module.exports.validate = validate;
-module.exports.validateLogin = validateLogin;
-module.exports.validatePass = validatePass;
-module.exports.Admin = Admin;
+module.exports = {
+    Admin,
+    validate,
+    validateLogin,
+    validatePass
+}

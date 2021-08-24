@@ -69,7 +69,9 @@ function validateLogin(inp) {
     const result = schema.validate(inp);
     return result;
 }
-module.exports.User = User;
-module.exports.userSchema = userSchema;
-module.exports.validate = validate;
-module.exports.validateLogin = validateLogin;
+
+module.exports = {
+    User,
+    validate,
+    validateLogin
+}

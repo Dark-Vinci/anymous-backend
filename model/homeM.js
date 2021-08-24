@@ -105,6 +105,8 @@ function validatePut(inp) {
     return result;
 }
 
-module.exports.Home = Home;
-module.exports.validate = validate;
-module.exports.validatePut = validatePut;
+module.exports = {
+    Home,
+    validate,
+    validatePut
+}

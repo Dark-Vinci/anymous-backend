@@ -1,159 +1,182 @@
 const express = require('express');
-const router = express.Router();
-const mongoose = require('mongoose');
-const { Admin, validate, validatePass, validateLogin } = require('../model/admin');
+const bcrypt = require('bcrypt');
 const _ = require('lodash');
-const wrap = require('../middleware/wrapper');
+
+const router = express.Router();
+
+const wrapper = require('../middleware/wrapper');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const superAdmin = require('../middleware/superAdmin');
-const bcrypt = require('bcrypt');
-const val = mongoose.Types.ObjectId;
+const bodyValidator = require('../middleware/bodyValidator');
+const idValidator = require('../middleware/idValidator');
+const { Admin, validate, validatePass, validateLogin } = require('../model/admin');
 
-const adminWare = [ auth, admin ];
-const superWare = [ auth, admin, superAdmin ];
+// array of route handler middlewares
+const adminMiddleware = [ auth, admin ];
+const adminIdValidator = [ idValidator, auth, admin ];
+const superAdminIdMiddleware = [ idValidator, auth, admin, superAdmin ];
+const adminBodyPasswordChnageMiddleware = [ auth, admin, bodyValidator(validatePass) ];
 
-router.get('/', superWare, wrap (async (req, res) => {
-    // only by admins only super admin
-    const admin = await Admin.find()
-        .select('-password');
+// route handler for getting all the admin in the database
+router.get('/all-admin', adminMiddleware, wrapper ( async (req, res) => {
+    const admins = await Admin.find()
+        .select({ password: 0 });
 
-    res.send(admin);
+    res.status(200).json({
+        status: 200,
+        message: 'success',
+        data: admins
+    })
 }));
 
-router.get('/:id', adminWare, async (req, res) => {
-    // admin or user
+// route handler for getting an admin by its id
+router.get('/one/:id', adminIdValidator, wrapper ( async (req, res) => {
     const { id } = req.params;
+    const admin = await Admin.findById(id)
+        .select({ password: 0 });
 
-    if (!val.isValid(id)) {
-        return res.status(404).send('invalid user id');
+    if (!admin) {
+        return res.status(404).json({
+            status: 404,
+            message: 'no such user in the database'
+        });
     } else {
-        const admin = await Admin.findById(id)
-            .select('-password');
-
-        if (!admin) {
-            return res.status(404).send('no such user in the database');
-        } else {
-            res.send(admin);
-        }
+        res.status(200).json({
+            status: 200,
+            message: 'success',
+            data: admin
+        });
     }
-});
+}));
 
-router.delete('/:id', superWare, async (req, res) => {
-    // user or admins only super admin
+// route handler for deleting an admin, just for the super admin
+router.delete('/remove/:id', superAdminIdMiddleware, wrapper ( async (req, res) => {
     const { id } = req.params;
+    const admin = await Admin.findByIdAndRemove(id);
 
-    if (!val.isValid(id)) {
-        return res.status(404).send('invalid user id')
+    if (!admin) {
+        return res.status(404).json({
+            status: 404,
+            message: 'no such user in our database...'
+        });
     } else {
-        const admin = await Admin.findByIdAndRemove(id);
-        if (!admin) {
-            return res.status(404).send('no such user in our database...')
-        } else {
-           res.send(admin)
-        }
+        res.status(200).json({
+            status: 200,
+            message: 'success',
+            data: admin
+        });
     }
-});
+}));
 
-router.put('/:id/change-password', adminWare, async (req, res) => {
-    // only user and admin;
-    const { id } = req.params;
+// route handler for changing an admin password
+router.put('/change-password', adminBodyPasswordChnageMiddleware, wrapper ( async (req, res) => {
+    const id = req.user._id;
+    const admin = await Admin.findById(id);
 
-    if (req.user._id != id) {
-        return res.status(400).send('you broke something..');
-    }
+    let { oldPassword, newPassword } = req.body; 
 
-    if (!val.isValid(id)) {
-        return res.status(404).send('invalid user id')
+    const isValid = await bcrypt.compare(oldPassword, admin.password);
+
+    if (!isValid) {
+        res.status(400).json({
+            status: 400,
+            message: 'invalid username or password'
+        });
     } else {
-        const { error } = validatePass(req.body);
-        if (error) {
-            return  res.status(400).send(error.details[0].message);
-        } else {
-            let { email, oldPassword, newPassword } = req.body;
-            const admin = await Admin.findOne({email : email});
-            if (!admin) {
-                return res.status(400).send('invalid username or password')
-            } else {
-                const isValid = await bcrypt.compare(oldPassword, admin.password);
-                if (!isValid) {
-                    return res.status(400).send('invalid username or password')
-                } else {
-                    const salt = await bcrypt.genSalt(10);
-                    newPassword = await bcrypt.hash(newPassword, salt);
-                    admin.password = newPassword;
-                    await admin.save();
-                    res.send('password has been changed')
-                }
-            }
-        }
-    }
-});
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-router.post('/register', async (req, res) => {
-    //only super user
-    const admins = await Admin.find()
-        .count();
-    if (admins >= 5) {
-        return res.status(400).send('there cant be anymore admin in here..')
+        admin.password = hashedPassword;
+
+        await admin.save();
+
+        res.status(200).json({
+            status: 200,
+            message: 'success',
+            data: `your new password is now ${ newPassword }`
+        });
+    }
+}));
+
+// route handler for changing an admin password
+router.post('/register', bodyValidator(validate), wrapper ( async (req, res) => {
+    const adminCount = await Admin.find().count();
+
+    if (adminCount >= 3) {
+        res.status(400).json({
+            status: 400,
+            message: 'there cant be anymore admin in here..'
+        });
     } else {
-        const { error } = validate(req.body);
-        if (error) {
-            console.log(req.body)
-            return res.status(400).send(error.details[0].message);
-        } else {
             let { name, password, email } = req.body;
-            let admin = await Admin.findOne({email : email});
-            if (admin) {
-                return res.status(400).send('we have a user with same email')
-            } else {
-                admin = new Admin({
-                    name,
-                    email
-                });
+            let admin = await Admin.findOne({ email : email });
 
+            if (admin) {
+                return res.status(400).json({
+                    status: 400,
+                    message: 'we have a user with same email'
+                });
+            } else {
                 const salt = await bcrypt.genSalt(10);
                 password = await bcrypt.hash(password, salt);
-                admin.password = password;
 
-                if (admins == 0) {
+                admin = new Admin({ name, email, password });
+
+                if (adminCount == 0) {
                     admin.superAdmin = true;
                 } else {
                     admin.superAdmin = false;
                 }
 
                 await admin.save();
+
                 const token = admin.generateToken();
-                const toReturn = _.pick(admin, ['name', 'email'])
-                res.header('x-auth-token', token).send(toReturn);
+                const toReturn = _.pick(admin, ['name', 'email']);
+
+                res.status(201)
+                    .header('x-auth-token', token)
+                    .json({
+                        status: 201,
+                        message: 'success', 
+                        data: toReturn
+                    });
             }
         }
-    }
-});
+    // }
+}));
 
+// route handler for logging an admin in
+router.post('/login', bodyValidator(validateLogin), wrapper ( async (req, res) => {
+    const { email, password } = req.body;
 
-router.post('/login', async (req, res) => {
-    // anyone
-    const { error } = validateLogin(req.body);
+    const admin = await Admin.findOne({ email });
 
-    if (error) {
-        return res.status(400).send(error.details[0].message);
+    if (!admin) {
+        return res.status(404).json({
+            status: 404,
+            message: 'invalid email or password...'
+        });
     } else {
-        const { email, password } = req.body;
-        const admin = await Admin.findOne({ email: email });
-        if (!admin) {
-            return res.status(400).send('invalid email or password...');
+        const valid = await bcrypt.compare(password, admin.password);
+
+        if (!valid) {
+            res.status(400).json({
+                status: 400,
+                message: 'invalid email or password'
+            })
         } else {
-            const valid = await bcrypt.compare(password, admin.password);
-            if (!valid) {
-                return res.status(400).send('invalid email or password');
-            } else {
-                const token = admin.generateToken();
-                res.header('x-auth-token', token).send('youre welcome back user');
-            }
+            const token = admin.generateToken();
+
+            res.status(200)
+                .header('x-auth-token', token)
+                .json({
+                    status: 200,
+                    message: 'youre welcome back user'
+                });
         }
     }
-})
+}));
 
 
 module.exports = router;

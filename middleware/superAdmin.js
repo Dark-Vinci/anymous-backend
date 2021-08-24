@@ -1,9 +1,13 @@
 
 
 function isSuperAdmin(req, res, next) {
-    const supAd = req.user.superAdmin;
-    if (!supAd) {
-        return res.status(403).send('not authorized');
+    const supAdmin = req.user.superAdmin;
+    
+    if (!supAdmin) {
+        return res.status(403).json({
+            status: 403,
+            message: 'oga go like kill you'
+        })
     } else {
         next();
     }
