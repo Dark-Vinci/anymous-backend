@@ -16,6 +16,7 @@ const corsOptions = {
 
 module.exports = function (app) {
     app.use(cors(corsOptions));
+    
     if (app.get('env') == 'development') {
         app.use(morgan('tiny'));
     }
@@ -23,7 +24,6 @@ module.exports = function (app) {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(helmet());
-    // app.use(cors());
 
     app.use('/api/login', login);
     app.use('/api/user', user);

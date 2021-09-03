@@ -1,6 +1,12 @@
+/* 
+    FILE CONTAINING HOME MODEL AND VALAIDATION FUNCTION
+ */
+
+// required module
 const Joi = require('joi');
 const mongoose = require('mongoose');
 
+// creating the schema which the home document would be modelled around
 const homeSchema = new mongoose.Schema({
     header: {
         type: String,
@@ -40,8 +46,10 @@ const homeSchema = new mongoose.Schema({
     }
 });
 
+// the model model
 const Home = mongoose.model('Home', homeSchema);
 
+// validating function for home object creation
 function validate(inp) {
     const schema = Joi.object({
         isPublished: Joi.boolean(),
@@ -76,6 +84,7 @@ function validate(inp) {
     return result;
 }
 
+// validating function for home object editing
 function validatePut(inp) {
     const schema = Joi.object({
         isPublished: Joi.boolean(),

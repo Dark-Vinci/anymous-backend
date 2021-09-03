@@ -1,9 +1,15 @@
+/* 
+    FILE CONTAINING ADMIN MODEL AND VALAIDATION FUNCTION
+ */
+
+// required module
 const mongoose = require('mongoose');
 const { Schema } = require('mongoose');
 const Joi = require('joi');
 const config = require('config');
 const jwt = require('jsonwebtoken');
 
+// creating the schema which the admin document would be modelled around
 const adminSchema = new Schema({
     email: {
         type: String,
@@ -32,8 +38,10 @@ const adminSchema = new Schema({
     }
 });
 
+// an instance method on the admin for generating authentication token
 adminSchema.methods.generateToken = function() {
-    const token = jwt.sign({ _id: this._id, 
+    const token = jwt.sign({ 
+        _id: this._id, 
         superAdmin: this.superAdmin,
         isAdmin: true
     }, config.get('jwtPass'), {
@@ -43,8 +51,10 @@ adminSchema.methods.generateToken = function() {
     return token;
 }
 
+// the admin model
 const Admin = mongoose.model('Admin', adminSchema);
 
+// validating function for the creation of an admin
 function validate(inp) {
     const schema = Joi.object({
         name: Joi.string()
@@ -66,6 +76,7 @@ function validate(inp) {
     return result;
 };
 
+// validating function for logging in a user
 function validateLogin(inp) {
     const schema = Joi.object({
         email : Joi.string()
@@ -82,6 +93,7 @@ function validateLogin(inp) {
     return result;
 };
 
+// validating function for changing password
 function validatePass(inp) {
     const schema = Joi.object({
         oldPassword: Joi.string()

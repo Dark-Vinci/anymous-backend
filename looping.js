@@ -23,8 +23,8 @@ function looping(n) {
     return init;
 }
 
-let po = looping(2);
-for (let i = 0; i < 20; i++) {
+let po = looping(20);
+for (let i = 0; i < 39; i++) {
     console.log(po());
 }
 

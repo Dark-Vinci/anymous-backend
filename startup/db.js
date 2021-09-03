@@ -1,3 +1,5 @@
+// MODULE TO CONNECT TO MONGOOSE DATABASE
+
 const mongoose = require('mongoose');
 const winston = require('winston');
 
