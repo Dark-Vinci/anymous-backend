@@ -1,6 +1,6 @@
 {
     "name": "anonymous-message",
-    "db": "mongodb://localhost/anon",
+    "db": "mongodb://localhost/secret",
     "jwtPass": "",
-    "jwtExpires": "3600000"
+    "jwtExpires": "3600000000"
 }

@@ -1,4 +1,6 @@
 {
     "name": "anonymous-message",
-    "jwtPass": "pass_key"
+    "jwtPass": "pass_key",
+    "db": "db",
+    "jwtExpires": "expiresIn"
 }

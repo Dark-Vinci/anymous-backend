@@ -2,7 +2,10 @@
 // IN THE CONSOLE, A FILE AND THE DB
 
 const winston = require('winston');
+const config = require('config');
 require('winston-mongodb');
+
+const db = config.get('db');
 
 module.exports = function () {
     // logs info or error thrown by unexpected exceptions
@@ -21,7 +24,7 @@ module.exports = function () {
     winston.add( new winston.transports.File( { filename: 'logger.log' } ) );
     winston.add( new winston.transports.Console({ prettyPrint: true, colorize: true } ) );
     winston.add( new winston.transports.MongoDB({ 
-        db: "mongodb://localhost/secret",
+        db: db,
         level: 'info'
     }));
 }

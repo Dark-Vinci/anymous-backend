@@ -2,6 +2,8 @@ const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
+// ! here
+const compression = require('compression');
 
 const login = require('../routes/login');
 const user = require('../routes/user');
@@ -10,11 +12,11 @@ const admin = require('../routes/admin');
 const home = require('../routes/home');
 const error = require('../middleware/error');
 
-const corsOptions = {
-    exposedHeaders: 'x-auth-token'
-}
+const corsOptions = { exposedHeaders: 'x-auth-token' }
 
 module.exports = function (app) {
+    // ! here 
+    app.use(compression());
     app.use(cors(corsOptions));
     
     if (app.get('env') == 'development') {
